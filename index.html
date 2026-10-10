@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BGGone</title>
+  <meta name="description" content="Remove image backgrounds locally in your browser. No uploads, no servers, no sign-ups.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3E:root{--bg:%230d0f13}@media(prefers-color-scheme:light){:root{--bg:%23f6f7f9}}%3C/style%3E%3Ccircle cx='50' cy='50' r='42' fill='%2300d97e'/%3E%3Ccircle cx='50' cy='50' r='20' fill='var(--bg)'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      const saved = localStorage.getItem('bggone-theme');
+      const prefers = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', saved || prefers);
+    })();
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="logo">
+      <span class="logo-mark" aria-hidden="true"></span>
+      <span class="logo-text">BG<span class="accent">Gone</span></span>
+    </div>
+    <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+      <svg class="icon icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"></circle>
+        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
+      </svg>
+      <svg class="icon icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+      </svg>
+    </button>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Remove image backgrounds <span class="accent">locally.</span></h1>
+      <p>No uploads, no servers, no sign-ups. Everything happens right in your browser.</p>
+    </section>
+
+    <section class="workspace">
+      <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Upload image">
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        <h2>Drop an image here</h2>
+        <p class="muted">or click to browse</p>
+        <p class="hint">PNG · JPG · WEBP — processed entirely on your device</p>
+      </div>
+
+      <div class="editor hidden" id="editor">
+        <div class="editor-info">
+          <span id="imageInfo" class="info-chip">—</span>
+          <span class="info-chip" id="bgChip">
+            <span class="chip-dot" id="chipDot"></span>
+            <span id="bgLabel">bg color</span>
+          </span>
+        </div>
+
+        <div class="preview-stage">
+          <div class="comparison" id="comparison">
+            <img id="afterImage" class="img-after" alt="After background removal">
+            <img id="beforeImage" class="img-before" alt="Before background removal">
+            <div class="slider-handle" id="sliderHandle">
+              <div class="handle-line"></div>
+              <div class="handle-knob">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                  <polyline points="9 18 3 12 9 6" opacity="0"></polyline>
+                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="comparison-label label-before">Before</div>
+            <div class="comparison-label label-after">After</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="control-group">
+            <div class="control-head">
+              <label for="tolerance">Sensitivity</label>
+              <span class="value-display" id="toleranceVal">40</span>
+            </div>
+            <input type="range" id="tolerance" min="0" max="150" value="40">
+            <p class="control-hint">How similar a pixel must be to the background to be removed</p>
+          </div>
+
+          <div class="control-group">
+            <div class="control-head">
+              <label for="feather">Edge Softness</label>
+              <span class="value-display" id="featherVal">4</span>
+            </div>
+            <input type="range" id="feather" min="0" max="40" value="4">
+            <p class="control-hint">Smooths the transition at the edges of the cutout</p>
+          </div>
+
+          <div class="control-group">
+            <div class="control-head">
+              <label>Background Color</label>
+            </div>
+            <div class="color-mode">
+              <button id="autoMode" class="mode-btn active" type="button">Auto</button>
+              <button id="pickMode" class="mode-btn" type="button">Pick from image</button>
+            </div>
+            <p class="control-hint" id="pickHint">Sampling background color from image corners</p>
+            <p class="control-hint"><strong>Note:</strong> BGGone uses chroma keying. It removes only one specific color, making it perfect for solid or uniform backgrounds.</p>
+          </div>
+
+          <div class="actions">
+            <button id="downloadBtn" class="btn btn-primary" type="button">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              Download PNG
+            </button>
+            <button id="resetBtn" class="btn btn-ghost" type="button">New Image</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h3>100% Private</h3>
+        <p>Your images never leave your device. No uploads, no tracking, no servers.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <h3>Instant</h3>
+        <p>Chroma-key removal runs in your browser in milliseconds. No waiting in a queue.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M16 12l-4-4M12 8v8M8 12l4 4"></path>
+          </svg>
+        </div>
+        <h3>Free Forever</h3>
+        <p>No accounts, no watermarks, no limits. Open it and use it — that's it.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>BGGone · Runs entirely in your browser · <a href="https://github.com/P1px101/BGGone" target="_blank" rel="noopener">Source</a></p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
