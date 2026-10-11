@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BGGone</title>
-  <meta name="description" content="Remove image backgrounds locally in your browser. No uploads, no servers, no sign-ups.">
+  <meta name="description" content="Remove image backgrounds and blur images locally in your browser. No uploads, no servers, no sign-ups.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cstyle%3E:root{--bg:%230d0f13}@media(prefers-color-scheme:light){:root{--bg:%23f6f7f9}}%3C/style%3E%3Ccircle cx='50' cy='50' r='42' fill='%2300d97e'/%3E%3Ccircle cx='50' cy='50' r='20' fill='var(--bg)'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,6 +42,12 @@
     </section>
 
     <section class="workspace">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="bg" type="button">Remove Background</button>
+        <button class="tab-btn" data-tab="blur" type="button">Blur Image</button>
+        <span class="tab-indicator" id="tabIndicator"></span>
+      </div>
+
       <div class="upload-zone" id="uploadZone" tabindex="0" role="button" aria-label="Upload image">
         <input type="file" id="fileInput" accept="image/*" hidden>
         <svg class="upload-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -63,8 +69,8 @@
 
         <div class="preview-stage">
           <div class="comparison" id="comparison">
-            <img id="afterImage" class="img-after" alt="After background removal">
-            <img id="beforeImage" class="img-before" alt="Before background removal">
+            <img id="afterImage" class="img-after" alt="After processing">
+            <img id="beforeImage" class="img-before" alt="Before processing">
             <div class="slider-handle" id="sliderHandle">
               <div class="handle-line"></div>
               <div class="handle-knob">
@@ -79,38 +85,95 @@
             </div>
             <div class="comparison-label label-before">Before</div>
             <div class="comparison-label label-after">After</div>
+            <div id="brushCursor" class="brush-cursor hidden"></div>
           </div>
         </div>
 
-        <div class="controls">
-          <div class="control-group">
-            <div class="control-head">
-              <label for="tolerance">Sensitivity</label>
-              <span class="value-display" id="toleranceVal">40</span>
+        <div class="side-panel">
+          <div class="controls" id="bgPanel">
+            <div class="control-group">
+              <div class="control-head">
+                <label for="tolerance">Sensitivity</label>
+                <input type="number" id="toleranceInput" class="value-input" min="0" max="150" value="40">
+              </div>
+              <input type="range" id="tolerance" min="0" max="150" value="40">
+              <p class="control-hint">How similar a pixel must be to the background to be removed</p>
             </div>
-            <input type="range" id="tolerance" min="0" max="150" value="40">
-            <p class="control-hint">How similar a pixel must be to the background to be removed</p>
+
+            <div class="control-group">
+              <div class="control-head">
+                <label for="feather">Edge Softness</label>
+                <input type="number" id="featherInput" class="value-input" min="0" max="40" value="4">
+              </div>
+              <input type="range" id="feather" min="0" max="40" value="4">
+              <p class="control-hint">Smooths the transition at the edges of the cutout</p>
+            </div>
+
+            <div class="control-group">
+              <div class="control-head">
+                <label for="bgBlur">Blur</label>
+                <input type="number" id="bgBlurInput" class="value-input" min="0" max="100" value="0">
+              </div>
+              <input type="range" id="bgBlur" min="0" max="100" value="0">
+              <p class="control-hint">Applies a soft blur to the final cutout image</p>
+            </div>
+
+            <div class="control-group">
+              <div class="control-head">
+                <label>Background Color</label>
+              </div>
+              <div class="color-mode">
+                <button id="autoMode" class="mode-btn active" type="button">Auto</button>
+                <button id="pickMode" class="mode-btn" type="button">Pick from image</button>
+              </div>
+              <p class="control-hint" id="pickHint">Sampling background color from image corners</p>
+              <p class="control-hint"><strong>Note:</strong> BGGone uses chroma keying. It removes only one specific color, making it perfect for solid or uniform backgrounds.</p>
+            </div>
+
+            <div class="control-group">
+              <div class="control-head">
+                <label>Manual Brush</label>
+                <button id="clearBrushBtn" class="text-btn" type="button">Clear</button>
+              </div>
+              <div class="brush-tools">
+                <button id="eraserBtn" class="tool-btn" type="button">Erase</button>
+                <button id="restoreBtn" class="tool-btn" type="button">Restore</button>
+              </div>
+              <div class="control-head mt-2">
+                <label for="brushSize">Brush Size</label>
+                <input type="number" id="brushSizeInput" class="value-input" min="1" max="200" value="20">
+              </div>
+              <input type="range" id="brushSize" min="1" max="200" value="20">
+            </div>
           </div>
 
-          <div class="control-group">
-            <div class="control-head">
-              <label for="feather">Edge Softness</label>
-              <span class="value-display" id="featherVal">4</span>
+          <div class="controls hidden" id="blurPanel">
+            <div class="control-group">
+              <div class="control-head">
+                <label for="blur">Blur Amount</label>
+                <input type="number" id="blurInput" class="value-input" min="0" max="100" value="10">
+              </div>
+              <input type="range" id="blur" min="0" max="100" value="10">
+              <p class="control-hint">Applies a blur to the original image without removing the background.</p>
             </div>
-            <input type="range" id="feather" min="0" max="40" value="4">
-            <p class="control-hint">Smooths the transition at the edges of the cutout</p>
-          </div>
 
-          <div class="control-group">
-            <div class="control-head">
-              <label>Background Color</label>
+            <div class="control-group">
+              <div class="control-head">
+                <label>Blur Mode</label>
+              </div>
+              <div class="brush-tools">
+                <button id="blurAllBtn" class="tool-btn active" type="button">Blur All</button>
+                <button id="blurBrushBtn" class="tool-btn" type="button">Blur Brush</button>
+              </div>
             </div>
-            <div class="color-mode">
-              <button id="autoMode" class="mode-btn active" type="button">Auto</button>
-              <button id="pickMode" class="mode-btn" type="button">Pick from image</button>
+
+            <div class="control-group">
+              <div class="control-head">
+                <label for="blurBrushSize">Brush Size</label>
+                <input type="number" id="blurBrushSizeInput" class="value-input" min="1" max="200" value="20">
+              </div>
+              <input type="range" id="blurBrushSize" min="1" max="200" value="20">
             </div>
-            <p class="control-hint" id="pickHint">Sampling background color from image corners</p>
-            <p class="control-hint"><strong>Note:</strong> BGGone uses chroma keying. It removes only one specific color, making it perfect for solid or uniform backgrounds.</p>
           </div>
 
           <div class="actions">
@@ -144,7 +207,7 @@
           </svg>
         </div>
         <h3>Instant</h3>
-        <p>Chroma-key removal runs in your browser in milliseconds. No waiting in a queue.</p>
+        <p>Chroma-key removal and blurring runs in your browser in milliseconds.</p>
       </div>
       <div class="feature">
         <div class="feature-icon">

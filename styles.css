@@ -129,7 +129,7 @@ main {
 
 .hero {
   text-align: center;
-  margin-bottom: 56px;
+  margin-bottom: 40px;
 }
 .hero h1 {
   font-size: clamp(2.2rem, 5vw, 3.4rem);
@@ -145,6 +145,39 @@ main {
   margin: 0 auto;
 }
 .accent { color: var(--accent); }
+
+.tabs {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  position: relative;
+  transition: color 0.3s ease;
+  font-family: inherit;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--text); }
+
+.tab-indicator {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px 2px 0 0;
+  transition: left 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), 
+              width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 1;
+}
 
 .upload-zone {
   border: 2px dashed var(--border-strong);
@@ -187,7 +220,7 @@ main {
   margin-top: 12px;
 }
 
-.editor.hidden, .upload-zone.hidden { display: none; }
+.editor.hidden, .upload-zone.hidden, .controls.hidden, .brush-cursor.hidden { display: none; }
 
 .editor {
   display: grid;
@@ -278,8 +311,9 @@ main {
   width: 2px;
   background: rgba(255, 255, 255, 0.85);
   transform: translateX(-50%);
-  z-index: 3;
-  pointer-events: none;
+  z-index: 5;
+  pointer-events: auto;
+  cursor: ew-resize;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
 .handle-knob {
@@ -297,7 +331,7 @@ main {
   gap: 1px;
   color: #1a1e25;
   box-shadow: 0 2px 10px rgba(0,0,0,0.25);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .comparison-label {
@@ -323,6 +357,24 @@ main {
   color: #06281b;
 }
 
+.brush-cursor {
+  position: absolute;
+  border: 1px solid #fff;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 6;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.5);
+  transform: translate(-50%, -50%);
+}
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 90px;
+}
+
 .controls {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -332,8 +384,6 @@ main {
   flex-direction: column;
   gap: 22px;
   box-shadow: var(--shadow);
-  position: sticky;
-  top: 90px;
 }
 
 .control-group {
@@ -352,11 +402,42 @@ main {
   font-weight: 600;
   color: var(--text);
 }
-.value-display {
-  font-size: 0.85rem;
+.mt-2 { margin-top: 12px; }
+
+.value-input {
+  width: 56px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   color: var(--accent);
+  font-size: 0.85rem;
   font-weight: 500;
+  padding: 4px 6px;
+  border-radius: 6px;
+  text-align: right;
+  outline: none;
+  font-family: inherit;
+  -moz-appearance: textfield;
 }
+.value-input::-webkit-outer-spin-button,
+.value-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.value-input:focus {
+  border-color: var(--accent);
+}
+
+.text-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.text-btn:hover { color: var(--accent); }
 
 .control-hint {
   font-size: 0.78rem;
@@ -397,7 +478,7 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 0 1px var(--accent);
 }
 
-.color-mode {
+.color-mode, .brush-tools {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
@@ -405,7 +486,7 @@ input[type="range"]::-moz-range-thumb {
   padding: 4px;
   border-radius: 8px;
 }
-.mode-btn {
+.mode-btn, .tool-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -417,8 +498,8 @@ input[type="range"]::-moz-range-thumb {
   transition: all 0.2s ease;
   font-family: inherit;
 }
-.mode-btn:hover { color: var(--text); }
-.mode-btn.active {
+.mode-btn:hover, .tool-btn:hover { color: var(--text); }
+.mode-btn.active, .tool-btn.active {
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -519,7 +600,7 @@ input[type="range"]::-moz-range-thumb {
   .editor {
     grid-template-columns: 1fr;
   }
-  .controls {
+  .side-panel {
     position: static;
   }
   .features {
@@ -532,6 +613,7 @@ input[type="range"]::-moz-range-thumb {
 @media (max-width: 520px) {
   .hero h1 { font-size: 2rem; }
   .upload-zone { padding: 40px 20px; }
+  .tab-btn { padding: 12px 12px; font-size: 0.85rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
